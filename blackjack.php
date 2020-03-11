@@ -103,9 +103,9 @@ function playGame($player1, $player2) {
     $player2['Score'] = $player2['Hand'][0]['Value'] + $player2['Hand'][1]['Value'];
     printScore($player1);
     printScore($player2);
-    if ($player1['Score'] > $player2['Score']) {
+    if ($player1['Score'] > $player2['Score'] || ($player2['Score'] > 21 && $player1['Score'] <= 21)) {
         echo '<h1>' . $player1['Name'] . ' Wins! <br>';
-    } else if ($player2['Score'] > $player1['Score']) {
+    } else if ($player2['Score'] > $player1['Score'] || ($player1['Score'] > 21 && $player2['Score'] <= 21)) {
         echo '<h1>' . $player2['Name'] . ' Wins! <br>';
     } else {
         echo '<h1> It\'s a Draw!</h1>';
