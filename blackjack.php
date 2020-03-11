@@ -309,7 +309,9 @@ function handInit(array &$players, array &$deck, Int &$depth) : Int {
  *
  * @return int return 0 if function completed successfully
  *
- * Internal parameters: depth stores the number of cards missing from the top of the deck
+ * Internal parameters:
+ * depth stores the number of cards missing from the top of the deck
+ * activePlayers denotes the numbers of players who are still drawing cards (have not stood or bust)
  */
 function playGame(Array $players) : Int {
     $activePlayers = count($players);
