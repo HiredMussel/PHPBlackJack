@@ -43,12 +43,13 @@ function generateSuit(String $suitname) : Array {
 
 /**
  * Generates a standard deck of 52 cards without jokers. Do this by taking each suit and dealing them into the array.
- * There are 13 cards in a suit. This function replicates the effect of simply stacking the suits on top of each other
- * to create the deck, so there will be 13 cards between any two cards with the same value in neighbouring suits.
- *
- * The function also generates a unique id for each card corresponding to its initial position in the deck. This is so that
- * we can check for specific cards later without having to check their value (e.g. distinguish between face cards and a 10
- * for the purpose of detecting a Blackjack)
+ * When we do this, we need to ensure that no two cards are assigned the same ID so that no card is overwritten and
+ * our final deck contains exactly 52 cards.
+ * This function does this by assigning each card to an initial index equal to the number of cards it would be from the
+ * top if the suits were simply placed on top of each other in descending order (starting with the King of Spades and
+ * ending with the Ace of Diamonds).
+ * For example, the Queen of Hearts is the 12th card of the Hearts, and is underneath all of the Diamonds and Clubs.
+ * There are 13 each of Diamonds and clubs, so the index of the Queen of Hearts is 2*13 + 12 = 38.
  *
  * @return array a standard deck of 52 cards without jokers
  */
