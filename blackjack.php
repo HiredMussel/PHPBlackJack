@@ -10,6 +10,7 @@
  * function to generate the cards belonging to a single suit
  *
  * @param String suitname - the name of the suit which will be generated
+ *
  * @return array - the 13 cards comprising the generated suit
  */
 function generateSuit(String $suitname) : Array {
@@ -97,6 +98,7 @@ function deal(Array &$player, Array $deck, Int &$depth) : Int {
  * @param array $player the player whose hand should be checked. This function saves persistent data about the player's
  * score, the value of a card in his hand, and whether or not he is bust. Therefore this parameter is passed by
  * reference
+ *
  * @return bool is the player bust?
  */
 function checkBust(Array &$player) : bool {
@@ -119,6 +121,7 @@ function checkBust(Array &$player) : bool {
  * Function to check if a player has a Blackjack
  *
  * @param $player array the player to check
+ *
  * @return bool does this player have a blackjack?
  */
 function checkBlackjack(Array $player) : bool {
@@ -140,6 +143,7 @@ function checkBlackjack(Array $player) : bool {
  * player has a blackjack
  *
  * @param $player array the player whose score should be printed
+ *
  * @return int return 0 if function completed successfully
  */
 function printScore(Array $player) : Int {
@@ -159,9 +163,17 @@ function printScore(Array $player) : Int {
 }
 
 /**
- * Function to determine whether or not a player will have a card dealt to them
+ * Function to determine whether or not a player will have a card dealt to them. A player will want to draw an
+ * additional card if they have not already won, their score is not currently over 16, and they have not already stopped
+ * drawing cards by standing or going bust.
+ *
+ * @param $players array The current state of the players. The AI needs information about the other players in order to
+ * decide the best move.
+ * @param $activePlayer array The player evaluating whether or not they would like to draw another card
+ *
+ * @return bool return whether or not the active player would like to draw another card
  */
-function hitMe(Array $players, Array $activePlayer) : bool {
+function hitMe(array $players, array $activePlayer) : bool {
     $wantsACard = true;
     $hasHighestScore = true;
     $anyOthersActive = false;
@@ -176,7 +188,7 @@ function hitMe(Array $players, Array $activePlayer) : bool {
             $wantsACard = false;
         }
     }
-    if ($activePlayer['Score'] > 16) {
+    if ($activePlayer['Score'] > 16 || $activePlayer['Stood'] == true || $activePlayer['Bust'] == true) {
         $wantsACard = false;
     }
     return $wantsACard;
@@ -200,6 +212,9 @@ function printWinners (array $players) : Int {
     // Find the highest score among all players
     $highestScore = 0;
     foreach ($players as $player) {
+        // Bust flag was not reading correctly without this for some reason, although all bust players should
+        // theoretically be flagged as such
+        checkBust($player);
         if ($player['Bust'] == false && $player['Score'] > $highestScore) {
             $highestScore = $player['Score'];
         }
@@ -308,6 +323,7 @@ function playGame(Array $players) : Int {
         // Since changes must be made to the player arrays themselves, this needs to be a for loop rather than a for
         // Each loop
         for ($i = 0; $i < count($players); $i++) {
+            checkBust($players[$i]);
             // Deal card to each player in turn
             if (hitMe($players, $players[$i]) == true) {
                 deal($players[$i], $deck, $depth);
@@ -315,7 +331,6 @@ function playGame(Array $players) : Int {
                 $players[$i]['Stood'] = true;
                 $activePlayers--;
             }
-            checkBust($players[$i]);
         }
     }
     // Once drawing has stopped, calculate the winner
