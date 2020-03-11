@@ -14,7 +14,7 @@
  */
 function generateSuit(String $suitname) : Array {
     $suit = [];
-    // Generate the Ace
+    // Generate the Ace. Default value is 11, although this can change later on
     $suit[1] = [
         'Name' => 'Ace of ' . $suitname,
         'Value' => 11,
@@ -64,9 +64,6 @@ function generateDeck() : Array {
         $deck[26+$i] = $hearts[$i];
         $deck[39+$i] = $spades[$i];
     }
-    for ($i = 1; $i <= 52; $i++) {
-        $deck[$i]['id'] = $i;
-    }
     return $deck;
 }
 
@@ -92,15 +89,18 @@ function deal(Array &$player, Array $deck, Int &$depth) : Int {
  * function to check if a player is bust. If a player is bust but has an Ace (a card with a value of 11, the card's value
  * and player's score are both then reduced by ten and the player is no longer bust.
  *
- * @param array $player the player whose hand should be checked
+ * @param array $player the player whose hand should be checked. This function saves persistent data about the player's
+ * score, the value of a card in his hand, and whether or not he is bust. Therefore this parameter is passed by
+ * reference
  * @return bool is the player bust?
  */
 function checkBust(Array &$player) : bool {
     if ($player['Score'] > 21) {
         $player['Bust'] = true;
-        foreach ($player['Hand'] as $card) {
-            if ($card['Value'] == 11) {
-                $card['Value'] -= 10;
+        // needs to be a for loop so that changes made to card value are persistent
+        for ($i = 0; $i < count($player['Hand']); $i++) {
+            if ($player['Hand'][$i]['Value'] == 11) {
+                $player['Hand'][$i]['Value'] -= 10;
                 $player['Score'] -= 10;
                 $player['Bust'] = false;
                 break;
@@ -131,7 +131,8 @@ function checkBlackjack(Array $player) : bool {
 }
 
 /**
- * Function to print a player's score
+ * Function to print a player's score. The function also prints out special notes for if the player is bust or if the
+ * player has a blackjack
  *
  * @param $player array the player whose score should be printed
  * @return int return 0 if function completed successfully
@@ -153,16 +154,21 @@ function printScore(Array $player) : Int {
 }
 
 /**
- * Function to determine which of two players has won the game of blackjack and print the announcement to the page
+ * Function to determine which of two players has won the game of blackjack and print the announcement to the page.
+ * Function evaluates the following:
+ * If a player is bust, then he loses. Due to the way the dealing criteria in the main function work, both players being
+ * bust is impossible.
+ * If one player has a higher score than the other and is not bust, then he wins.
+ * If both players have the same score and neither have a blackjack, it is a draw. If both players have 21 and one of the
+ * players have a blackjack, that player wins.
+ * If both players have a blackjack, it is a draw
  *
  * @param $player1 array the first player in the game
  * @param $player2 array the second player in the game
  *
- * @return String return the name of the winning player
+ * @return Int return 0 if the function completed successfully
  */
 function printWinner (array $player1, array $player2) : Int {
-    //If a player is bust then he loses. Otherwise the winner is the one with the higher score.
-    //If the game is a draw and both players have 21, the player with the blackjack wins
     if ($player1['Bust'] == true) {
         $player1['Winner'] = false;
         $player2['Winner'] = true;
@@ -214,12 +220,12 @@ function playGame(Array $player1, Array $player2) : Int {
             deal($player1, $deck, $depth);
         }
         // Check whether a player is bust after eliminating Aces
-        checkbust($player1);
+        checkBust($player1);
         // If player 1 has not busted out, then deal to player 2
         if ($player2['Score'] < 17 && $player1['Bust'] == false) {
             deal($player2, $deck, $depth);
         }
-        checkbust($player2);
+        checkBust($player2);
     }
     // Once drawing has stopped, calculate the winner
     printScore($player1);
