@@ -71,72 +71,177 @@ function generateDeck() : Array {
 }
 
 /**
- * Deals a card to a player
+ * Deals a card to a player if that player is not bust
  *
- * @param $playerHand array the array representing the hand of one of the players. This function needs to actually change
- *                      the player's hand, so is passed by reference
+ * @param $player array the array representing the player being dealt a card
  * @param $deck array the array representing the deck
- * @param $depth int draw the card this many cards from the top (dealing the same depth twice will result in duplicates)
+ * @param $depth int the number of cards missing from the top of the deck. Passed by reference since drawing a card increases it
  *
- * @return Boolean return 0 if the function executed successfully
+ * @return int return 0 if the function executed successfully
  */
-function deal(Array &$playerHand, Array $deck, Int $depth) : Boolean {
-    $playerHand[] = $deck[$depth];
+function deal(Array &$player, Array $deck, Int &$depth) : Int {
+    if ($player['Bust'] == false) {
+        $player['Hand'][] = $deck[$depth];
+        $player['Score'] += $deck[$depth]['Value'];
+    }
+    $depth += 1;
     return 0;
+}
+
+/**
+ * function to check if a player is bust. If a player is bust but has an Ace (a card with a value of 11, the card's value
+ * and player's score are both then reduced by ten and the player is no longer bust.
+ *
+ * @param array $player the player whose hand should be checked
+ * @return bool is the player bust?
+ */
+function checkBust(Array &$player) : bool {
+    if ($player['Score'] > 21) {
+        $player['Bust'] = true;
+        foreach ($player['Hand'] as $card) {
+            if ($card['Value'] == 11) {
+                $card['Value'] -= 10;
+                $player['Score'] -= 10;
+                $player['Bust'] = false;
+                break;
+            }
+        }
+    }
+    return $player['Bust'];
+}
+
+/**
+ * Function to check if a player has a Blackjack
+ *
+ * @param $player array the player to check
+ * @return bool does this player have a blackjack?
+ */
+function checkBlackjack(Array $player) : bool {
+    $hasBlackjack = true;
+    if (count($player['Hand']) != 2) {
+       $hasBlackjack = false;
+    }
+    if ($player['Hand'][0]['Value'] != 11 && $player['Hand'][1]['Value'] != 11) {
+        $hasBlackjack = false;
+    }
+    if ($player['Hand'][0]['Value'] != 10 && $player['Hand'][1]['Value'] != 10) {
+        $hasBlackjack = false;
+    }
+    return $hasBlackjack;
 }
 
 /**
  * Function to print a player's score
  *
  * @param $player array the player whose score should be printed
+ * @return int return 0 if function completed successfully
  */
-function printScore($player) {
-    $score = 0;
+function printScore(Array $player) : Int {
+    $score = $player['Score'];
     echo '<h1>' . $player['Name'] . '</h1>';
     foreach ($player['Hand'] as $card) {
         echo $card['Name'] . '<br>';
-        $score += $card['Value'];
+    }
+    if ($player['Score'] > 21) {
+        $score .= ' Bust!';
+    }
+    if (checkBlackjack($player)) {
+        $score .= ' Blackjack!';
     }
     echo 'Score: ' . $score . '<br><br>';
+    return 0;
 }
 
 /**
- * Play a game of blackjack!
+ * Function to determine which of two players has won the game of blackjack and print the announcement to the page
+ *
+ * @param $player1 array the first player in the game
+ * @param $player2 array the second player in the game
+ *
+ * @return String return the name of the winning player
+ */
+function printWinner (array $player1, array $player2) : Int {
+    //If a player is bust then he loses. Otherwise the winner is the one with the higher score.
+    //If the game is a draw and both players have 21, the player with the blackjack wins
+    if ($player1['Bust'] == true) {
+        $player1['Winner'] = false;
+        $player2['Winner'] = true;
+    } else if ($player2['Bust'] == true) {
+        $player2['Winner'] = false;
+        $player1['Winner'] = true;
+    } else if ($player1['Score'] > $player2['Score']) {
+        $player1['Winner'] = true;
+        $player2['Winner'] = false;
+    } else if ($player1['Score'] < $player2['Score']) {
+        $player2['Winner'] = true;
+        $player1['Winner'] = false;
+    } else {
+        (checkBlackjack($player1)) ? $player1['Winner'] = true : $player1['Winner'] = false;
+        (checkBlackjack($player2)) ? $player2['Winner'] = true : $player2['Winner'] = false;
+    }
+
+    if ($player1['Winner'] == $player2['Winner']) {
+        echo '<h1>It\'s a draw!</h1>';
+    } else if ($player1['Winner'] == true) {
+        echo '<h1>' . $player1['Name'] . ' wins!</h1>';
+    } else {
+        echo '<h1>' . $player2['Name'] . ' wins!</h1>';
+    }
+
+    return 0;
+}
+
+/**
+ * Play a game of blackjack! Player 1 and 2 take turns to draw from the deck if their scores are below 16. If either
+ * of them goes over 21, they lose. Aces can count as either a 1 or an 11.
+ *
+ * If the two players have the same score, they draw unless one of them has an Ace and a 10 - the player with the Ace
+ * and 10 wins. If both players have this hand then the game is still a draw
  *
  * @param $player1 array The first player
  * @param $player2 array The second player
+ * @return int return 0 if function completed successfully
+ *
+ * Internal parameters: depth stores the number of cards missing from the top of the deck
  */
-function playGame($player1, $player2) {
+function playGame(Array $player1, Array $player2) : Int {
     $deck = generateDeck();
-    $depth = 0;
     shuffle($deck);
-    deal($player1['Hand'], $deck, 0);
-    deal($player2['Hand'], $deck, 1);
-    deal($player1['Hand'], $deck, 2);
-    deal($player2['Hand'], $deck, 3);
-    $player1['Score'] = $player1['Hand'][0]['Value'] + $player1['Hand'][1]['Value'];
-    $player2['Score'] = $player2['Hand'][0]['Value'] + $player2['Hand'][1]['Value'];
+    $depth = 0;
+    // The game continues for as long as neither player is bust and one player can keep drawing cards
+    while (($player1['Score'] < 17 || $player2['Score'] < 17) && $player1['Bust'] == false && $player2['Bust'] == false) {
+        if ($player1['Score'] < 17) {
+            deal($player1, $deck, $depth);
+        }
+        // Check whether a player is bust after eliminating Aces
+        checkbust($player1);
+        // If player 1 has not busted out, then deal to player 2
+        if ($player2['Score'] < 17 && $player1['Bust'] == false) {
+            deal($player2, $deck, $depth);
+        }
+        checkbust($player2);
+    }
+    // Once drawing has stopped, calculate the winner
     printScore($player1);
     printScore($player2);
-    if ($player1['Score'] > $player2['Score'] || ($player2['Score'] > 21 && $player1['Score'] <= 21)) {
-        echo '<h1>' . $player1['Name'] . ' Wins! <br>';
-    } else if ($player2['Score'] > $player1['Score'] || ($player1['Score'] > 21 && $player2['Score'] <= 21)) {
-        echo '<h1>' . $player2['Name'] . ' Wins! <br>';
-    } else {
-        echo '<h1> It\'s a Draw!</h1>';
-    }
+    printWinner($player1, $player2);
+
+    return 0;
 }
-$player1=[
+
+$challenger=[
     'Hand' => [],
-    'Name' => 'Player 1',
+    'Name' => 'Challenger',
     'Score' => 0,
+    'Bust' => false,
+    'Winner' => false,
 ];
-$player2=[
+$dealer=[
     'Hand' => [],
-    'Name' => 'Player 2',
+    'Name' => 'Dealer',
     'Score' => 0,
+    'Bust' => false,
+    'Winner' => false,
 ];
-$deck = generateDeck();
-echo '<pre>';
-var_dump($deck);
-echo '</pre>';
+
+playGame($challenger, $dealer);
