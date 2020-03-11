@@ -73,7 +73,8 @@ function generateDeck() : Array {
  *
  * @param $player array the array representing the player being dealt a card
  * @param $deck array the array representing the deck
- * @param $depth int the number of cards missing from the top of the deck. Passed by reference since drawing a card increases it
+ * @param $depth int the number of cards missing from the top of the deck. Passed by reference since drawing a card
+ * increases it
  *
  * @return int return 0 if the function executed successfully
  */
@@ -87,8 +88,8 @@ function deal(Array &$player, Array $deck, Int &$depth) : Int {
 }
 
 /**
- * function to check if a player is bust. If a player is bust but has an Ace (a card with a value of 11, the card's value
- * and player's score are both then reduced by ten and the player is no longer bust.
+ * function to check if a player is bust. If a player is bust but has an Ace (a card with a value of 11, the card's
+ * value and player's score are both then reduced by ten and the player is no longer bust.
  *
  * @param array $player the player whose hand should be checked. This function saves persistent data about the player's
  * score, the value of a card in his hand, and whether or not he is bust. Therefore this parameter is passed by
@@ -160,8 +161,8 @@ function printScore(Array $player) : Int {
  * If a player is bust, then he loses. Due to the way the dealing criteria in the main function work, both players being
  * bust is impossible.
  * If one player has a higher score than the other and is not bust, then he wins.
- * If both players have the same score and neither have a blackjack, it is a draw. If both players have 21 and one of the
- * players have a blackjack, that player wins.
+ * If both players have the same score and neither have a blackjack, it is a draw. If both players have 21 and one of
+ * the players have a blackjack, that player wins.
  * If both players have a blackjack, it is a draw
  *
  * @param $player1 array the first player in the game
