@@ -9,38 +9,38 @@
 /**
  * function to generate the cards belonging to a single suit
  *
- * @param String suitname - the name of the suit which will be generated
+ * @param String suitName - the name of the suit which will be generated
  *
  * @return array - the 13 cards comprising the generated suit
  */
-function generateSuit(String $suitname) : Array {
+function generateSuit(String $suitName) : Array {
     $suit = [];
     // Generate the Ace. Default value is 11, although this can change later on
     $suit[1] = [
-        'Name' => 'Ace of ' . $suitname,
+        'Name' => 'Ace of ' . $suitName,
         'Value' => 11,
         'id' => 1,
     ];
     for ($i = 2; $i <= 10; $i++) {
         $suit[] = [
-            'Name' => $i . ' of ' . $suitname,
+            'Name' => $i . ' of ' . $suitName,
             'Value' => $i,
             'id' => $i,
         ];
     }
     // Generate the Picture Cards
     $suit[11] = [
-        'Name' => 'Jack of ' . $suitname,
+        'Name' => 'Jack of ' . $suitName,
         'Value' => 10,
         'id' => 11,
     ];
     $suit[12] = [
-        'Name' => 'Queen of ' . $suitname,
+        'Name' => 'Queen of ' . $suitName,
         'Value' => 10,
         'id' => 12,
     ];
     $suit[13] = [
-        'Name' => 'King of ' . $suitname,
+        'Name' => 'King of ' . $suitName,
         'Value' => 10,
         'id' =>13,
     ];
@@ -343,6 +343,7 @@ function playGame(Array $players) : Int {
 
     return 0;
 }
+
 $players = [
     0 =>[
         'Hand' => [],
