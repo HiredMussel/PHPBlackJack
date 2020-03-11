@@ -18,25 +18,30 @@ function generateSuit(String $suitname) : Array {
     $suit[1] = [
         'Name' => 'Ace of ' . $suitname,
         'Value' => 11,
+        'id' => 1,
     ];
     for ($i = 2; $i <= 10; $i++) {
         $suit[] = [
             'Name' => $i . ' of ' . $suitname,
             'Value' => $i,
+            'id' => $i,
         ];
     }
     // Generate the Picture Cards
     $suit[11] = [
         'Name' => 'Jack of ' . $suitname,
         'Value' => 10,
+        'id' => 11,
     ];
     $suit[12] = [
         'Name' => 'Queen of ' . $suitname,
         'Value' => 10,
+        'id' => 12,
     ];
     $suit[13] = [
         'Name' => 'King of ' . $suitname,
         'Value' => 10,
+        'id' =>13,
     ];
     return $suit;
 }
@@ -69,20 +74,18 @@ function generateDeck() : Array {
 }
 
 /**
- * Deals a card to a player if that player is not bust
+ * Deals a card to a player if that player Has 16 points or fewer
  *
  * @param $player array the array representing the player being dealt a card
  * @param $deck array the array representing the deck
  * @param $depth int the number of cards missing from the top of the deck. Passed by reference since drawing a card
  * increases it
  *
- * @return int return 0 if the function executed successfully
+ * @return int return 0 if the function completed successfully
  */
 function deal(Array &$player, Array $deck, Int &$depth) : Int {
-    if ($player['Bust'] == false) {
-        $player['Hand'][] = $deck[$depth];
-        $player['Score'] += $deck[$depth]['Value'];
-    }
+    $player['Hand'][] = $deck[$depth];
+    $player['Score'] += $deck[$depth]['Value'];
     $depth += 1;
     return 0;
 }
@@ -156,46 +159,127 @@ function printScore(Array $player) : Int {
 }
 
 /**
- * Function to determine which of two players has won the game of blackjack and print the announcement to the page.
+ * Function to determine whether or not a player will have a card dealt to them
+ */
+function hitMe(Array $players, Array $activePlayer) : bool {
+    $wantsACard = true;
+    $hasHighestScore = true;
+    $anyOthersActive = false;
+    foreach ($players as $player) {
+        if ($player['Score'] >= $activePlayer['Score']) {
+            $hasHighestScore=false;
+        }
+        if ($player != $activePlayer && $player['Bust'] == 0 && $player['Stood'] == 0) {
+            $anyOthersActive = true;
+        }
+        if ($hasHighestScore == true && $anyOthersActive == false) {
+            $wantsACard = false;
+        }
+    }
+    if ($activePlayer['Score'] > 16) {
+        $wantsACard = false;
+    }
+    return $wantsACard;
+}
+
+/**
+ * Function to determine which of the players has won the game of blackjack and print the announcement to the page.
  * Function evaluates the following:
- * If a player is bust, then he loses. Due to the way the dealing criteria in the main function work, both players being
+ * If a player is bust, then he loses. Due to the way the dealing criteria in the main function work, all players being
  * bust is impossible.
  * If one player has a higher score than the other and is not bust, then he wins.
  * If both players have the same score and neither have a blackjack, it is a draw. If both players have 21 and one of
  * the players have a blackjack, that player wins.
  * If both players have a blackjack, it is a draw
  *
- * @param $player1 array the first player in the game
- * @param $player2 array the second player in the game
+ * @param $players array the list of active players in the game
  *
  * @return Int return 0 if the function completed successfully
  */
-function printWinner (array $player1, array $player2) : Int {
-    if ($player1['Bust'] == true) {
-        $player1['Winner'] = false;
-        $player2['Winner'] = true;
-    } else if ($player2['Bust'] == true) {
-        $player2['Winner'] = false;
-        $player1['Winner'] = true;
-    } else if ($player1['Score'] > $player2['Score']) {
-        $player1['Winner'] = true;
-        $player2['Winner'] = false;
-    } else if ($player1['Score'] < $player2['Score']) {
-        $player2['Winner'] = true;
-        $player1['Winner'] = false;
-    } else {
-        (checkBlackjack($player1)) ? $player1['Winner'] = true : $player1['Winner'] = false;
-        (checkBlackjack($player2)) ? $player2['Winner'] = true : $player2['Winner'] = false;
+function printWinners (array $players) : Int {
+    // Find the highest score among all players
+    $highestScore = 0;
+    foreach ($players as $player) {
+        if ($player['Bust'] == false && $player['Score'] > $highestScore) {
+            $highestScore = $player['Score'];
+        }
     }
-
-    if ($player1['Winner'] == $player2['Winner']) {
-        echo '<h1>It\'s a draw!</h1>';
-    } else if ($player1['Winner'] == true) {
-        echo '<h1>' . $player1['Name'] . ' wins!</h1>';
-    } else {
-        echo '<h1>' . $player2['Name'] . ' wins!</h1>';
+    // Detect whether any player has a blackjack
+    $playerHasBlackjack = false;
+    foreach ($players as $player) {
+        if (checkBlackjack($player) == true) {
+            $playerHasBlackjack = true;
+        }
     }
+    // Create the array of Winners
+    $winners = [];
+    foreach ($players as $player) {
+        if ($highestScore == $player['Score']) {
+            if ($playerHasBlackjack == false) {
+                $winners[] = $player['Name'];
+            } else if ($playerHasBlackjack == true && checkBlackjack($player) == true) {
+                $winners[] = $player['Name'];
+            }
+        }
+    }
+    // Print the array of Winners
+    if (count($winners) == 1) {
+        echo '<br> The winner is: ';
+    } else {
+        echo 'The winners are: ';
+    }
+    foreach ($winners as $winner) {
+        echo $winner . ', ';
+    }
+    echo ' with a score of: ' . $highestScore;
+    if ($playerHasBlackjack == true) {
+        echo ' and a Blackjack!';
+    }
+    echo '</br>';
+    return 0;
+}
 
+/**
+ * Function to initialise the hands
+ *
+ * @param array $players the players currently playing the game. Passed as reference because this function can add a
+ * new player
+ * @param array $deck the deck of cards being used to play
+ * @param Int $depth the number of cards missing from the top of the deck (because they have already been dealt)
+ *
+ * @return Int return 0 if the function is run successfully
+ */
+function handInit(array &$players, array &$deck, Int &$depth) : Int {
+    for ($i = 0; $i < count($players); $i++) {
+        deal($players[$i], $deck, $depth);
+        deal($players[$i], $deck, $depth);
+        // If a player is dealt a double, their hand can be split provided there are no more than the maximum no. of
+        // players
+        if ($players[$i]['Hand'][0]['id'] == $players[$i]['Hand'][1]['id'] && count($players) < 7) {
+            for ($j = count($players); $j > $i; $j--) {
+                $players[$j] = $players[$j - 1];
+            }
+            $players[$i+1] = [
+                'Hand' => [
+                    0 => $players[$i]['Hand'][1],
+                ],
+                'Name' => $players[$i]['Name'] . ' Hand 2',
+                'Score' => $players[$i]['Hand'][1]['Value'],
+                'Bust' => false,
+                'Winner' => false,
+                'Stood' => false,
+            ];
+            deal($players[$i+1], $deck, $depth);
+            $players[$i]['Name'] .= ' Hand 1';
+            $players[$i]['Hand'] = [
+                0 => $players[$i]['Hand'][0],
+            ];
+            $players[$i]['Score'] = $players[$i]['Hand'][0]['Value'];
+            deal($players[$i], $deck, $depth);
+            // Do not initialise the split hand again
+            $i++;
+        }
+    }
     return 0;
 }
 
@@ -206,50 +290,82 @@ function printWinner (array $player1, array $player2) : Int {
  * If the two players have the same score, they draw unless one of them has an Ace and a 10 - the player with the Ace
  * and 10 wins. If both players have this hand then the game is still a draw
  *
- * @param $player1 array The first player
- * @param $player2 array The second player
+ * @param $players array the array representing the list of players
+ *
  * @return int return 0 if function completed successfully
  *
  * Internal parameters: depth stores the number of cards missing from the top of the deck
  */
-function playGame(Array $player1, Array $player2) : Int {
+function playGame(Array $players) : Int {
+    $activePlayers = count($players);
     $deck = generateDeck();
     shuffle($deck);
     $depth = 0;
-    // The game continues for as long as neither player is bust and one player can keep drawing cards
-    while (($player1['Score'] < 17 || $player2['Score'] < 17) && $player1['Bust'] == false && $player2['Bust'] == false) {
-        if ($player1['Score'] < 17) {
-            deal($player1, $deck, $depth);
+    // Deal each player two cards
+    handInit($players, $deck, $depth);
+    // The game continues for as long as no player is bust and one player can keep drawing cards
+    while ($activePlayers > 0) {
+        // Since changes must be made to the player arrays themselves, this needs to be a for loop rather than a for
+        // Each loop
+        for ($i = 0; $i < count($players); $i++) {
+            // Deal card to each player in turn
+            if (hitMe($players, $players[$i]) == true) {
+                deal($players[$i], $deck, $depth);
+            } else {
+                $players[$i]['Stood'] = true;
+                $activePlayers--;
+            }
+            checkBust($players[$i]);
         }
-        // Check whether a player is bust after eliminating Aces
-        checkBust($player1);
-        // If player 1 has not busted out, then deal to player 2
-        if ($player2['Score'] < 17 && $player1['Bust'] == false) {
-            deal($player2, $deck, $depth);
-        }
-        checkBust($player2);
     }
     // Once drawing has stopped, calculate the winner
-    printScore($player1);
-    printScore($player2);
-    printWinner($player1, $player2);
+    foreach($players as $player) {
+        printScore($player);
+    }
+    printWinners($players);
 
     return 0;
 }
-
-$challenger=[
-    'Hand' => [],
-    'Name' => 'Challenger',
-    'Score' => 0,
-    'Bust' => false,
-    'Winner' => false,
+$players = [
+    0 =>[
+        'Hand' => [],
+        'Name' => 'Challenger 1',
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ],
+    1 =>[
+        'Hand' => [],
+        'Name' => 'Challenger 2',
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ],
+    2 =>[
+        'Hand' => [],
+        'Name' => 'Challenger 3',
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ],
+    3 =>[
+        'Hand' => [],
+        'Name' => 'Challenger 4',
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ],
+    4 => [
+        'Hand' => [],
+        'Name' => 'Dealer',
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ],
 ];
-$dealer=[
-    'Hand' => [],
-    'Name' => 'Dealer',
-    'Score' => 0,
-    'Bust' => false,
-    'Winner' => false,
-];
-
-playGame($challenger, $dealer);
+playGame($players);
