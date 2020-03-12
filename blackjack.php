@@ -167,28 +167,19 @@ function printScore(Array $player) : Int {
  * additional card if they have not already won, their score is not currently over 16, and they have not already stopped
  * drawing cards by standing or going bust.
  *
- * @param $players array The current state of the players. The AI needs information about the other players in order to
- * decide the best move.
  * @param $activePlayer array The player evaluating whether or not they would like to draw another card
  *
  * @return bool return whether or not the active player would like to draw another card
  */
 function hitMe(array $players, array $activePlayer) : bool {
     $wantsACard = true;
-    $hasHighestScore = true;
-    $anyOthersActive = false;
-    foreach ($players as $player) {
-        if ($player['Score'] >= $activePlayer['Score']) {
-            $hasHighestScore=false;
-        }
-        if ($player != $activePlayer && $player['Bust'] == 0 && $player['Stood'] == 0) {
-            $anyOthersActive = true;
-        }
-        if ($hasHighestScore == true && $anyOthersActive == false) {
-            $wantsACard = false;
+    $allBust = true;
+    foreach($players as $player) {
+        if ($player != $activePlayer && $player['Bust'] == false) {
+            $allBust = false;
         }
     }
-    if ($activePlayer['Score'] > 16 || $activePlayer['Stood'] == true || $activePlayer['Bust'] == true) {
+    if ($activePlayer['Score'] > 16 || $activePlayer['Stood'] == true || $activePlayer['Bust'] == true || $allBust == true) {
         $wantsACard = false;
     }
     return $wantsACard;
@@ -255,6 +246,43 @@ function printWinners (array $players) : Int {
 }
 
 /**
+ * Function to create a player
+ *
+ * @param $name String the name of the player
+ *
+ * @return array the player created by this function
+ */
+function createPlayer (String $playerName) : array {
+    $player =[
+        'Hand' => [],
+        'Name' => $playerName,
+        'Score' => 0,
+        'Bust' => false,
+        'Winner' => false,
+        'Stood' => false,
+    ];
+    return $player;
+}
+
+/**
+ * Function to create all players. Will always create the dealer as the last player present
+ *
+ * @param Int $playerNumber
+ *
+ * @return array the array of players who will be participating in the game
+ */
+function createAllPlayers (Int $playerNumber) : array {
+    $players = [];
+    for ($i = 0; $i < $playerNumber - 1; $i++) {
+        $playerId = $i + 1;
+        $players[] = createPlayer('Challenger ' . $playerId);
+    }
+    $players[] = createPlayer('Dealer');
+
+    return $players;
+}
+
+/**
  * Function to initialise the hands
  *
  * @param array $players the players currently playing the game. Passed as reference because this function can add a
@@ -305,7 +333,7 @@ function handInit(array &$players, array &$deck, Int &$depth) : Int {
  * If the two players have the same score, they draw unless one of them has an Ace and a 10 - the player with the Ace
  * and 10 wins. If both players have this hand then the game is still a draw
  *
- * @param $players array the array representing the list of players
+ * @param $playerNumber Int the number of players taking part in the game
  *
  * @return int return 0 if function completed successfully
  *
@@ -313,7 +341,10 @@ function handInit(array &$players, array &$deck, Int &$depth) : Int {
  * depth stores the number of cards missing from the top of the deck
  * activePlayers denotes the numbers of players who are still drawing cards (have not stood or bust)
  */
-function playGame(Array $players) : Int {
+function playGame(Int $playerNumber) : Int {
+    // players are stored as an array. Each individual player is also an array containing pieces of information about
+    // that player
+    $players = createAllPlayers($playerNumber);
     $activePlayers = count($players);
     $deck = generateDeck();
     shuffle($deck);
@@ -344,46 +375,4 @@ function playGame(Array $players) : Int {
     return 0;
 }
 
-$players = [
-    0 =>[
-        'Hand' => [],
-        'Name' => 'Challenger 1',
-        'Score' => 0,
-        'Bust' => false,
-        'Winner' => false,
-        'Stood' => false,
-    ],
-    1 =>[
-        'Hand' => [],
-        'Name' => 'Challenger 2',
-        'Score' => 0,
-        'Bust' => false,
-        'Winner' => false,
-        'Stood' => false,
-    ],
-    2 =>[
-        'Hand' => [],
-        'Name' => 'Challenger 3',
-        'Score' => 0,
-        'Bust' => false,
-        'Winner' => false,
-        'Stood' => false,
-    ],
-    3 =>[
-        'Hand' => [],
-        'Name' => 'Challenger 4',
-        'Score' => 0,
-        'Bust' => false,
-        'Winner' => false,
-        'Stood' => false,
-    ],
-    4 => [
-        'Hand' => [],
-        'Name' => 'Dealer',
-        'Score' => 0,
-        'Bust' => false,
-        'Winner' => false,
-        'Stood' => false,
-    ],
-];
-playGame($players);
+playGame(4);
