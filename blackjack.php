@@ -71,6 +71,8 @@ function generateDeck() : Array {
         $deck[26+$i] = $hearts[$i];
         $deck[39+$i] = $spades[$i];
     }
+    shuffle($deck);
+
     return $deck;
 }
 
@@ -347,7 +349,6 @@ function playGame(Int $playerNumber) : Int {
     $players = createAllPlayers($playerNumber);
     $activePlayers = count($players);
     $deck = generateDeck();
-    shuffle($deck);
     $depth = 0;
     // Deal each player two cards
     handInit($players, $deck, $depth);
