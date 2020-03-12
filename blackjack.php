@@ -250,7 +250,7 @@ function printWinners (array $players) : Int {
 /**
  * Function to create a player
  *
- * @param $name String the name of the player
+ * @param $playerName String the name of the player
  *
  * @return array the player created by this function
  */
